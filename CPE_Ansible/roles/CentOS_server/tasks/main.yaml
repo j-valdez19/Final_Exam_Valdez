@@ -1,0 +1,65 @@
+
+  - name: Installing httpd and apache2 for CentOS
+    yum:
+      name:
+        - httpd
+        - php
+      state: latest
+
+  - name: Creating a Destination Directory for Prometheus
+    file:
+      path: ~/prometheus
+      state: directory
+
+  - name: Downloading and Extracting Prometheus tar.gz file
+    unarchive:
+      src: https://github.com/prometheus/prometheus/releases/download/v2.39.1/prometheus-2.39.1.linux-amd64.tar.gz
+      dest: ~/prometheus
+      remote_src: yes
+      mode: 0777
+      owner: root
+      group: root
+
+  - name: Stopping the Prometheus Service to Avoid Service Conflict
+    service:
+      name: prometheus
+      state: stopped
+
+  - name: Adding the Prometheus Executable Files
+    shell: |
+      cd ~/prometheus/prometheus*
+      cp -r . /usr/local/bin/prometheus
+
+
+# Restarting Services
+
+  - name: Restarting/Enabling httpd service
+    service:
+      name: httpd
+      state: restarted
+      enabled: true
+
+  - name: Restarting/Enabling Prometheus service
+    service:
+      name: prometheus
+      state: restarted
+      enabled: true
+
+
+# Changing Motd
+
+  - name: Changing MOTD
+    copy:
+      src: motd
+      dest: /etc/motd
+      owner: root
+      group: root
+      mode: 0644
+
+  - block:
+    - name: Verification of Motd Contents
+      shell: cat /etc/motd
+      register: motd_content
+
+  - debug:
+      msg="{{ motd_content }}"
